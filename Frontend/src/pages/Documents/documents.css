@@ -1,0 +1,212 @@
+.document {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.document .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    padding-bottom: 0;
+}
+
+.document-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    width: 100%;
+    gap: 20px;
+}
+
+.document .doc-edit-view {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.document .header .edit-switch-btn {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    border: none;
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    justify-items: center;
+    padding: 20px;
+    gap: 10px;
+    cursor: pointer;
+    color: #ffffff;
+    background-color: #4c82af;
+    transition: background-color 0.3s;
+}
+
+.document .header .edit-switch-btn:hover {
+    background-color: #2a4a64;
+}
+
+.document-container .doc-edit-view .edit-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.document-container .success-btn {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    border: none;
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    justify-items: center;
+    padding: 20px;
+    gap: 10px;
+    cursor: pointer;
+    color: #ffffff;
+    background-color: #4CAF50;
+    transition: background-color 0.3s;
+}
+
+.document-container .success-btn:hover {
+    background-color: #3e8e41;
+}
+
+.document-container .success-btn:disabled {
+    background-color: rgb(108, 108, 108) !important;
+    color: #ffffff !important;
+}
+
+.document-container .delete-btn {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    border: none;
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    justify-items: center;
+    padding: 20px !important;
+    gap: 10px;
+    cursor: pointer;
+    color: #ffffff;
+    background-color: #f44336;
+    -webkit-border-radius: 40px;
+    -moz-border-radius: 40px;
+    -ms-border-radius: 40px;
+    -o-border-radius: 40px;
+    transition: background-color 0.3s;
+}
+
+.document-container .delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+.document-container .delete-btn:disabled {
+    background-color: rgb(108, 108, 108) !important;
+    color: #ffffff !important;
+}
+
+.document-container .doc-details {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 40px;
+    -webkit-border-radius: 40px;
+    -moz-border-radius: 40px;
+    -ms-border-radius: 40px;
+    -o-border-radius: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.add-access-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.add-access-form .form-control {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    width: 20rem;
+    padding: 1rem 4rem 1rem 1rem;
+    background: var(--arrow-icon) no-repeat right 0.8em center/1.4em, linear-gradient(to left, var(--arrow-bg) 3em, var(--select-bg) 3em);
+    color: #000000;
+    border-radius: 0.25em;
+    box-shadow: 0 0 1em 0 rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    -webkit-border-radius: 0.25em;
+    -moz-border-radius: 0.25em;
+    -ms-border-radius: 0.25em;
+    -o-border-radius: 0.25em;
+}
+
+.add-access-form select::-ms-expand {
+    display: none;
+}
+
+.add-access-form select:focus {
+    outline: none;
+}
+
+.add-access-form select option {
+    color: inherit;
+    background-color: #00000048;
+    padding:20px;
+    border: 0
+}
+
+.add-access-form ul{
+    list-style-type: none;
+    margin-top: 10px;
+}
+
+.add-access-form li{
+    padding: 10px 20px;
+    background-color: #ffffff48;
+    border: 0;
+    width: 20rem;
+    cursor: pointer;
+}
+
+.add-access-form li:hover{
+    background-color: #ffffff;
+    cursor: pointer;
+}
+
+.add-access-form .selected{
+    background-color: #80acff;
+}
+
+.add-access-form ul h5{
+    margin-top: 10px;
+}
+
+.add-access-form button{
+    width: 20rem;
+}

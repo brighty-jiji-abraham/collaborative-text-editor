@@ -1,0 +1,12 @@
+.footer{
+    /* position: absolute; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    bottom: 0;
+}
+
+.footer .footer-content{
+    display: flex;
+}
