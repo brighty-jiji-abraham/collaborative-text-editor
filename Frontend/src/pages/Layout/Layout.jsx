@@ -1,6 +1,6 @@
 // src/components/Layout/Layout.jsx
 import React from 'react';
-import Sidebar from '../../components/Sidebar/Sidebar';
+import Sidebar from '../../components/sidebar/Sidebar';
 import Header from '../../components/Header/Header';
 import { Outlet } from 'react-router-dom';  // Use this to render child routes dynamically
 import PropTypes from 'prop-types';

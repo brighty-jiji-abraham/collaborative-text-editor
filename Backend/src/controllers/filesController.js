@@ -375,15 +375,17 @@ exports.addUserOrTeamToAccess = async (req, res) => {
 };
 // #endregion
 
-// #region Remove User or Team from File Access
-// Remove user or team from file's access list
+// #region Remove File Access Entry by Access ID
+// Remove a specific access entry from file's access list using accessId
 exports.removeUserOrTeamFromAccess = async (req, res) => {
     try {
         const { fileId } = req.params;
-        const { userId, teamId } = req.body;
+        const { accessId } = req.body; // Expecting accessId in the request body now
 
-        if (!userId && !teamId) {
-            return responseHandler(res, 400, 'Either userId or teamId is required.');
+        console.log('Remove Access Request:', { fileId, accessId }); // Logging for debugging
+
+        if (!accessId) {
+            return responseHandler(res, 400, 'Access ID is required.');
         }
 
         // Find the file by ID
@@ -392,44 +394,97 @@ exports.removeUserOrTeamFromAccess = async (req, res) => {
             return responseHandler(res, 404, 'File not found.');
         }
 
-        // Check if the current user has 'admin' role to remove users or teams from access list
+        // Find the index of the access entry to remove based on accessId
+        const accessToRemoveIndex = file.access.findIndex(permission => permission._id.toString() === accessId);
+
+        if (accessToRemoveIndex === -1) {
+            return responseHandler(res, 404, 'Access entry not found.'); // Access entry with given ID not found
+        }
+
+        const accessEntryToRemove = file.access[accessToRemoveIndex]; // **Get the access entry object**
+
+        // Check if the access entry to remove is for the owner, and prevent removal
+        if (file.owner.toString() === accessEntryToRemove.member.toString()) { // **Correct owner check**
+            return responseHandler(res, 400, 'Cannot remove owner from access list.');
+        }
+
+
+        // Check if the current user has 'admin' role to remove access
         const userAccess = file.access.find(permission => permission.member.toString() === req.user._id.toString());
         if (!userAccess || userAccess.role !== 'admin') {
-            return responseHandler(res, 403, 'Access denied.');
+            return responseHandler(res, 403, 'Access denied. You must be an admin to remove access.');
         }
 
-        if (userId) {
-            // Remove the specific user from the access list
-            const userInAccess = file.access.some(permission => permission.member.toString() === userId);
-            if (!userInAccess) {
-                return responseHandler(res, 400, 'User is not in the access list.');
-            }
 
-            file.access = file.access.filter(permission => permission.member.toString() !== userId);
-        } else if (teamId) {
-            // Find the team by ID
-            const team = await Team.findById(teamId).populate('members.member');
-            if (!team) {
-                return responseHandler(res, 404, 'Team not found.');
-            }
-
-            // Remove all members of the team from the access list
-            const teamMemberIds = team.members.map(({ member }) => member._id.toString());
-            const initialAccessLength = file.access.length;
-
-            file.access = file.access.filter(permission => !teamMemberIds.includes(permission.member.toString()));
-
-            if (file.access.length === initialAccessLength) {
-                return responseHandler(res, 400, 'No team members were in the access list.');
-            }
-        }
+        // Remove the access entry from the array
+        file.access.splice(accessToRemoveIndex, 1); // Remove 1 element at the found index
 
         // Save the updated file
         const updatedFile = await file.save();
 
+        // Emit socket event to notify clients about access removal (optional, but good for real-time updates)
+        if (req.io) { // Assuming you are passing io object in your request
+            req.io.to(`document-${fileId}`).emit('accessRemoved', { documentId: fileId, accessId: accessId });
+        }
+
+
         return responseHandler(res, 200, 'Access removed successfully.', updatedFile);
     } catch (err) {
-        console.error('Error removing user or team from access:', err.message || err);
+        console.error('Error removing access:', err.message || err);
+        return responseHandler(res, 500, 'Server error. Please try again later.');
+    }
+};
+// #endregion
+
+// #region Edit Access Role for User or Team in File Access
+// Edit access role for user or team in file's access list
+exports.editAccess = async (req, res) => {
+    try {
+        const { fileId } = req.params;
+        const { accessId, role } = req.body;
+
+        console.log('Edit Access Request:', { fileId, accessId, role });
+
+        if (!accessId) {
+            return responseHandler(res, 400, 'Access ID is required.');
+        }
+
+        if (!role) {
+            return responseHandler(res, 400, 'Role is required.');
+        }
+
+        if (!['editor', 'admin', 'viewer'].includes(role)) {
+            return responseHandler(res, 400, 'Invalid role.');
+        }
+
+        // Find the file by ID
+        const file = await File.findById(fileId);
+        if (!file) {
+            return responseHandler(res, 404, 'File not found.');
+        }
+
+        // Check if the current user has 'admin' role to edit access
+        const userAccess = file.access.find(permission => permission.member.toString() === req.user._id.toString());
+        if (!userAccess || userAccess.role!== 'admin') {
+            return responseHandler(res, 403, 'Access denied. You must be an admin to edit access.');
+        }
+
+        // Find the specific access entry within the file's access list
+        const accessToUpdateIndex = file.access.findIndex(permission => permission._id.toString() === accessId);
+        if (accessToUpdateIndex === -1) {
+            return responseHandler(res, 404, 'Access entry not found.');
+        }
+
+        // Update the role of the access entry
+        file.access[accessToUpdateIndex].role = role;
+
+        // Save the updated file
+        const updatedFile = await file.save();
+
+        console.log('Access updated successfully.');
+        return responseHandler(res, 200, 'Access updated successfully.', updatedFile);
+    } catch (err) {
+        console.error('Error editing access role:', err.message || err);
         return responseHandler(res, 500, 'Server error. Please try again later.');
     }
 };

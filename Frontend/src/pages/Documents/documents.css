@@ -195,7 +195,7 @@
 }
 
 .add-access-form li:hover{
-    background-color: #ffffff;
+    background-color: #ffffff20;
     cursor: pointer;
 }
 
@@ -209,4 +209,32 @@
 
 .add-access-form button{
     width: 20rem;
+}
+
+.edit-access-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.access-buttons{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.edit-access-btn{
+    cursor: pointer;
+}
+
+.edit-access-btn:hover{
+    color: #ffa200;
+}
+
+.remove-access-btn{
+    cursor: pointer;
+}
+
+.remove-access-btn:hover{
+    color: #ff0000;
 }

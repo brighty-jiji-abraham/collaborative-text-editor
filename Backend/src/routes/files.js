@@ -30,4 +30,7 @@ fileRouter.post('/:fileId/access', authverify, fileController.addUserOrTeamToAcc
 // Remove user from file access (protected)
 fileRouter.delete('/:fileId/access', authverify, fileController.removeUserOrTeamFromAccess);
 
+// Edit user access to file (protected)
+fileRouter.put('/:fileId/access', authverify, fileController.editAccess);
+
 module.exports = fileRouter;

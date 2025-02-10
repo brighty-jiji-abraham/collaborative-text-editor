@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaPenToSquare, FaLock, FaRegTrashCan } from "react-icons/fa6";
-import { getDocumentById, updateDocument, deleteDocument, getUserSuggestions, getTeamSuggestions, addAccess, removeAccess } from '../../components/Dashboard/documentService';
+import { TbUserEdit } from "react-icons/tb";
+import { MdPersonRemove } from "react-icons/md";
+import { getDocumentById, updateDocument, deleteDocument, removeAccess } from '../../components/Dashboard/documentService';
 import { io } from 'socket.io-client';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './documents.css';
 import Button from '../../components/Button/Button';
+import AddAccessModal from './AddAccessModal';
+import EditAccessModal from './EditAccessModal'; // Import EditAccessModal
 
 const Documents = () => {
     const socket = io('http://localhost:3000', { withCredentials: true });
@@ -20,15 +24,10 @@ const Documents = () => {
     const [isEditable, setIsEditable] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [accessType, setAccessType] = useState('user'); // 'user' or 'team'
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [selectedTeam, setSelectedTeam] = useState(null);
-    const [customUser, setCustomUser] = useState('');
-    const [customTeam, setCustomTeam] = useState('');
-    const [userSuggestions, setUserSuggestions] = useState([]);
-    const [teamSuggestions, setTeamSuggestions] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Renamed for clarity
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State for Edit Modal
+    const [accessToEdit, setAccessToEdit] = useState(null); // State to hold access entry being edited
+
 
     const location = useLocation();
     const message = location.state?.message;
@@ -69,18 +68,75 @@ const Documents = () => {
             }
         });
 
+        socket.on('accessAdded', (updatedData) => {
+            if (updatedData.documentId === id) {
+                fetchDocumentDetails();
+            }
+        });
+        socket.on('accessUpdated', (updatedData) => { // New listener for accessUpdated
+            if (updatedData.documentId === id) {
+                fetchDocumentDetails(); // Refresh details when access is updated
+            }
+        });
+        socket.on('accessRemoved', (updatedData) => { // New listener for accessRemoved
+            if (updatedData.documentId === id) {
+                fetchDocumentDetails(); // Refresh details when access is removed
+            }
+        });
+
+
         return () => {
             socket.disconnect();
         };
     }, [id, socket]);
 
-    const openModal = () => {
-        setIsModalOpen(true);  // Open the modal
+    const fetchDocumentDetails = async () => {
+        try {
+            const response = await getDocumentById(id);
+            if (response && response.data) {
+                setDocument(response.data);
+            } else {
+                setError('Document details not found');
+            }
+        } catch (error) {
+            setError('Failed to fetch document details');
+        }
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);  // Close the modal
+
+    const openAddModal = () => {
+        setIsAddModalOpen(true);
     };
+
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+    };
+
+    const openEditModal = (access) => { // Function to open Edit Modal
+        setAccessToEdit(access);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setAccessToEdit(null);
+    };
+
+    const handleRemoveAccess = async (accessId, memberId) => {
+        const isConfirmed = window.confirm('Are you sure you want to remove this user/team access?');
+        if (isConfirmed) {
+            try {
+                await removeAccess(id, { accessId: accessId }); // Call removeAccess API
+                socket.emit('accessRemoved', { documentId: id, accessId: accessId, memberId: memberId }); // Emit socket event
+                setSuccessMessage('Access removed successfully!');
+                fetchDocumentDetails(); // Refresh document details
+            } catch (error) {
+                setError('Failed to remove access');
+                console.error("Error removing access:", error);
+            }
+        }
+    };
+
 
     const handleUpdate = async () => {
         try {
@@ -109,65 +165,16 @@ const Documents = () => {
         setIsReadOnly(prevState => !prevState);
     };
 
-    const handleAddAccess = async () => {
-        try {
-            const newAccess = {
-                userId: accessType === 'user' ? selectedUser : null,
-                teamId: accessType === 'team' ? selectedTeam : null,
-                role: 'viewer',
-            };
-            await addAccess(id, newAccess);
-            setSuccessMessage('Access added successfully');
-            socket.emit('accessAdded', { documentId: id, newAccess });
-            setSelectedTeam(null);
-            setSelectedUser(null);
-        } catch (error) {
-            setError('Failed to add access');
-        }
+    const handleAccessAdded = () => {
+        setSuccessMessage('Access added successfully');
+        fetchDocumentDetails();
     };
 
-    const handleUserInputChange = async (event) => {
-        const value = event.target.value;
-        setCustomUser(value);
-
-        if (value) {
-            setLoading(true);
-            try {
-                const response = await getUserSuggestions(value);
-                if(response.data == null){
-                    setUserSuggestions([]);
-                }
-                else{
-                    setUserSuggestions([response.data]);
-                }
-            } catch (error) {
-                setError('Failed to fetch user suggestions');
-            } finally {
-                setLoading(false);
-            }
-        } else {
-            setUserSuggestions([]);
-        }
+    const handleAccessUpdated = () => { // New handler for access updated
+        setSuccessMessage('Access updated successfully');
+        fetchDocumentDetails(); // Refresh document details after updating access
     };
 
-    const handleTeamInputChange = async (event) => {
-        const value = event.target.value;
-        setCustomTeam(value);
-
-        if (value) {
-            setLoading(true);
-            try {
-                const response = await getTeamSuggestions(value);
-                setTeamSuggestions(response.data);
-            } catch (error) {
-                setError('Failed to fetch team suggestions');
-            } finally {
-                setLoading(false);
-            }
-        } else {
-            setTeamSuggestions([]);
-        }
-    };
 
     if (error) return <div className="alert alert-danger">{error}</div>;
     if (!document) return <div className="Loading">Loading...</div>;
@@ -281,77 +288,52 @@ const Documents = () => {
 
                     <h5>Access:</h5>
                     {document.access?.map((access, index) => (
-                        <div key={index}>
-                            <div><strong>User:</strong> {access.member?.name?.first_name} {access.member?.name?.middle_name} {access.member?.name?.last_name}</div>
+                        <div key={index} className="access-entry">
+                            <div>
+                                <strong>User:</strong> {access.member?.name?.first_name} {access.member?.name?.middle_name} {access.member?.name?.last_name}
+                            </div>
                             <div><strong>Role:</strong> {access.role}</div>
+                            {isAdmin && (
+                                <div className='access-buttons'>
+                                    <Button
+                                        Name="edit-access-btn"
+                                        text="Edit"
+                                        iconComponent={<TbUserEdit />}
+                                        onClick={() => openEditModal(access)} // Open Edit modal on click
+                                        smallButton={true} // Add a prop for smaller button style if needed
+                                    />
+                                     <Button
+                                        Name="remove-access-btn"
+                                        text="Remove"
+                                        iconComponent={<MdPersonRemove />}
+                                        onClick={() => handleRemoveAccess(access._id, access.member?._id)} // Call handleRemoveAccess
+                                        smallButton={true}
+                                        />
+                                </div>
+                            )}
                         </div>
                     ))}
                     {isAdmin && (
-                        <div className="add-access-form">
-                            <label htmlFor="accessType"><b>Add Access:</b></label>
-                            <select
-                            id="accessType"
-                            className="form-control"
-                            value={accessType}
-                            onChange={(e) => setAccessType(e.target.value)}
-                            >
-                                <option value="user">User</option>
-                                <option value="team">Team</option>
-                            </select>
-                            {accessType === 'user' ? (
-                                <div>
-                                    <label htmlFor="customUser">Enter User Name:</label>
-                                    <input
-                                        id="customUser"
-                                        type="text"
-                                        className="form-control"
-                                        value={customUser}
-                                        onChange={handleUserInputChange}
-                                    />
-                                    <ul>
-                                        {userSuggestions.map((user) => (
-                                            <li key={user._id} onClick={() => selectedUser !== user._id ? setSelectedUser(user._id) : setSelectedUser(null)} className={selectedUser === user._id ? "selected" : ""}>
-                                                {user.name?.first_name} {user.name?.middle_name} {user.name?.last_name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ) : (
-                                <div>
-                                    <label htmlFor="customTeam">Enter Team:</label>
-                                    <input
-                                        id="customTeam"
-                                        type="text"
-                                        className="form-control"
-                                        value={customTeam}
-                                        onChange={handleTeamInputChange}
-                                    />
-                                    <ul>
-                                    <div>
-                                    <label htmlFor="team">Select Team:</label>
-                                    <div>
-                                        <h5>User Teams</h5>
-                                        {teamSuggestions.length > 0 && teamSuggestions.userTeams.map((team) => (
-                                            <li key={team._id} onClick={() => selectedTeam !== team._id ? setSelectedTeam(team._id) : setSelectedTeam(null)} className={selectedTeam === team._id ? "selected" : ""}>
-                                                {team.name}
-                                            </li>
-                                        ))}
-                                        <h5>Other Teams</h5>
-                                        {teamSuggestions.length > 0 &&  teamSuggestions.otherTeams.map((team) => (
-                                            <li key={team._id} onClick={() => selectedTeam !== team._id ? setSelectedTeam(team._id) : setSelectedTeam(null)} className={selectedTeam === team._id ? "selected" : ""}>
-                                                {team.name}
-                                            </li>
-                                        ))}
-                                    </div>
-                                </div>
-                                    </ul>
-                                </div>
-                            )}
-                            <Button text='Add Access'  onClick={handleAddAccess} />
+                        <div className="add-access-section">
+                            <Button text='Add Access' onClick={openAddModal} />
                         </div>
                     )}
                 </div>
             </div>
+
+            <AddAccessModal
+                isOpen={isAddModalOpen}
+                onClose={closeAddModal}
+                documentId={id}
+                onAccessAdded={handleAccessAdded}
+            />
+             <EditAccessModal // Render EditAccessModal
+                isOpen={isEditModalOpen}
+                onClose={closeEditModal}
+                documentId={id}
+                accessToEdit={accessToEdit}
+                onAccessUpdated={handleAccessUpdated}
+            />
         </div>
     );
 };

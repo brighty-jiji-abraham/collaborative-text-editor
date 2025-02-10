@@ -51,7 +51,20 @@ export const addAccess = async (id, data) => {
 // Remove Access
 export const removeAccess = async (id, data) => {
     try{
-        const response = await axios.delete(`http://localhost:3000/api/files/${id}/access`, data, { withCredentials: true });
+        const response = await axios.delete(`http://localhost:3000/api/files/${id}/access`, {
+            data: data,
+            withCredentials: true // Keep this for cookie sending (if needed for your setup)
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error removing access:', error);
+    }
+};
+
+// Edit Access
+export const updateAccess = async (id, data) => {
+    try{
+        const response = await axios.put(`http://localhost:3000/api/files/${id}/access`, data, { withCredentials: true });
         return response.data;
     } catch (error) {
         console.error('Error updating access:', error);
